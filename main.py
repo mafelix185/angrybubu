@@ -33,17 +33,24 @@ def main(page: ft.Page):
     pontuacao_atual = 0
     jogo_ativo = True
 
-    # =========================================================================
-    # ⚙️ ARMAZENAMENTO ATUALIZADO (page.shared_preferences)
-    # =========================================================================
-    # Se não houver recorde salvo ainda no dispositivo, começa com 0
+    # Configuração de persistência local estável (shared_preferences)
     if not page.shared_preferences.contains_key("recorde_pet"):
         page.shared_preferences.set("recorde_pet", 0)
     
     recorde = page.shared_preferences.get("recorde_pet")
 
-    # --- MONTAGEM DA INTERFACE ---
-    imagem_cachorro = ft.Image(src=IMG_FELIZ, width=250, height=250, fit=ft.ImageFit.COVER, border_radius=20)
+    # =========================================================================
+    # 🖼️ CORREÇÃO DA IMAGEM (fit="cover")
+    # =========================================================================
+    # Passamos apenas a string "cover" diretamente no atributo 'fit'
+    imagem_cachorro = ft.Image(
+        src=IMG_FELIZ, 
+        width=250, 
+        height=250, 
+        fit="cover", 
+        border_radius=20
+    )
+    
     barra_estresse = ft.ProgressBar(value=nivel_estresse, width=300, color="red", bgcolor="green")
     lbl_status = ft.Text(value="O Bubu está feliz! Ouça a música e cuide dele. 🎵", size=15, weight=ft.FontWeight.BOLD, color="green")
     btn_reiniciar = ft.ElevatedButton(text="Jogar Novamente", visible=False)
@@ -84,7 +91,7 @@ def main(page: ft.Page):
 
     async def loop_tempo():
         nonlocal nivel_estresse, jogo_ativo, pontuacao_atual, recorde
-        while jogo_ativo:
+        while jogo_active := jogo_ativo:
             await asyncio.sleep(0.8)
             
             if 0.0 < nivel_estresse < 1.0:
@@ -104,7 +111,6 @@ def main(page: ft.Page):
                 imagem_cachorro.src = IMG_BRAVO
                 musica_fundo.pause()
                 
-                # Validação de Recorde usando shared_preferences
                 if pontuacao_atual > recorde:
                     recorde = pontuacao_atual
                     page.shared_preferences.set("recorde_pet", recorde)
