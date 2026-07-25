@@ -39,10 +39,7 @@ def main(page: ft.Page):
     
     recorde = page.shared_preferences.get("recorde_pet")
 
-    # =========================================================================
-    # 🖼️ CORREÇÃO DA IMAGEM (fit="cover")
-    # =========================================================================
-    # Passamos apenas a string "cover" diretamente no atributo 'fit'
+    # Imagem configurada de forma responsiva nativa
     imagem_cachorro = ft.Image(
         src=IMG_FELIZ, 
         width=250, 
@@ -53,6 +50,10 @@ def main(page: ft.Page):
     
     barra_estresse = ft.ProgressBar(value=nivel_estresse, width=300, color="red", bgcolor="green")
     lbl_status = ft.Text(value="O Bubu está feliz! Ouça a música e cuide dele. 🎵", size=15, weight=ft.FontWeight.BOLD, color="green")
+    
+    # =========================================================================
+    # 🔘 CORREÇÃO DO BOTÃO (Garantindo ft.ElevatedButton de ponta a ponta)
+    # =========================================================================
     btn_reiniciar = ft.ElevatedButton(text="Jogar Novamente", visible=False)
 
     lbl_pontos = ft.Text(value=f"Pontos: {pontuacao_atual}", size=18, weight=ft.FontWeight.BOLD, color="indigo")
@@ -91,7 +92,7 @@ def main(page: ft.Page):
 
     async def loop_tempo():
         nonlocal nivel_estresse, jogo_ativo, pontuacao_atual, recorde
-        while jogo_active := jogo_ativo:
+        while jogo_ativo:
             await asyncio.sleep(0.8)
             
             if 0.0 < nivel_estresse < 1.0:
