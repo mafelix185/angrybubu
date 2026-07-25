@@ -37,8 +37,10 @@ jobs:
           pip install "flet[cli]" flet-audio
 
       - name: Build Android Package
+        env:
+          FLET_CLI_NO_RICH_OUTPUT: "1"
         run: |
-          xvfb-run flet build apk --project-name angrybubu "Angry Bubu"
+          xvfb-run flet build apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
