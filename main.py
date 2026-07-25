@@ -1,9 +1,8 @@
 import asyncio
-import math
 import flet as ft
 import flet_audio as fta
 
-async def main(page: ft.Page):
+def main(page: ft.Page):
     page.title = "Angry Bubu"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
@@ -13,7 +12,7 @@ async def main(page: ft.Page):
     IMG_FELIZ = "https://unsplash.com"
     IMG_BRAVO = "https://unsplash.com"
 
-    # --- CONFIGURAÇÃO DE ÁUDIOS E HARDWARE ---
+    # --- CONFIGURAÇÃO DE ÁUDIOS ---
     musica_fundo = fta.Audio(
         src="/barn-beat-01.mp3",
         volume=0.3,
@@ -27,141 +26,150 @@ async def main(page: ft.Page):
     )
     
     vibração_sistema = ft.HapticFeedback()
-
-    # =========================================================================
-    # ⚙️ PADRÃO FLET 1.0: Mover componentes ocultos para page.services
-    # =========================================================================
-    # Elementos que interagem com o sistema sem desenhar na tela são 'Services'
     page.services.extend([musica_fundo, som_latido, vibração_sistema])
 
     # --- VARIÁVEIS DE ESTADO ---
-    nivel_estresse = 0.4
-    pontuacao_atual = 0
-    jogo_ativo = True
-
-    # Validação segura das preferências locais com await
-    if not await page.shared_preferences.contains_key("recorde_pet"):
-        await page.shared_preferences.set("recorde_pet", 0)
-    
-    recorde = await page.shared_preferences.get("recorde_pet")
+    estado = {
+        "nivel_estresse": 0.4,
+        "pontuacao_atual": 0,
+        "jogo_ativo": True,
+        "recorde": 0
+    }
 
     # Componentes estruturais do layout
     imagem_cachorro = ft.Image(src=IMG_FELIZ, width=250, height=250, fit="cover", border_radius=20)
-    barra_estresse = ft.ProgressBar(value=nivel_estresse, width=300, color="red", bgcolor="green")
-    lbl_status = ft.Text(value="O Bubu está feliz! Ouça a música e cuide dele. 🎵", size=15, weight=ft.FontWeight.BOLD, color="green")
+    barra_estresse = ft.ProgressBar(value=estado["nivel_estresse"], width=300, color="red", bgcolor="green")
+    lbl_status = ft.Text(value="O Bubu está feliz! Clique nele para acalmar! 🎵", size=15, weight=ft.FontWeight.BOLD, color="green")
     btn_reiniciar = ft.ElevatedButton(content=ft.Text("Jogar Novamente"), visible=False)
 
-    lbl_pontos = ft.Text(value=f"Points: {pontuacao_atual}", size=18, weight=ft.FontWeight.BOLD, color="indigo")
-    lbl_recorde = ft.Text(value=f"🏆 Recorde: {recorde}", size=16, weight=ft.FontWeight.W_500, color="amber-700")
+    lbl_pontos = ft.Text(value="Pontos: 0", size=18, weight=ft.FontWeight.BOLD, color="indigo")
+    lbl_recorde = ft.Text(value="🏆 Recorde: 0", size=16, weight=ft.FontWeight.W_500, color="amber-700")
     placar_container = ft.Row([lbl_pontos, lbl_recorde], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, width=300)
 
-    # Inicialização assíncrona da trilha sonora
-    await musica_fundo.play()
-
-    def atualizar_humor_visual():
-        if nivel_estresse > 0.70:
-            imagem_cachorro.src = IMG_BRAVO
-            lbl_status.value = "🚨 COMPORTAMENTO AGRESSIVO! CHACOALHE! 🤬"
-            lbl_status.color = "red"
-        elif 0.0 < nivel_estresse <= 0.70:
-            imagem_cachorro.src = IMG_FELIZ
-            lbl_status.value = "O Bubu está se acalmando com o balanço... 😮‍💨"
-            lbl_status.color = "orange"
-        elif nivel_estresse == 0.0:
-            imagem_cachorro.src = IMG_FELIZ
-            lbl_status.value = "Parabéns! O Bubu dormiu relaxado! 💤"
-            lbl_status.color = "green"
-
-    # Manipulador do sensor físico do acelerômetro alternativo (Estável em Services)
-    async def tratar_movimento_acelerometro(e):
-        nonlocal nivel_estresse
-        if not jogo_ativo:
+    # Lógica de clique na imagem
+    def ao_clicar_no_pet(e):
+        if not estado["jogo_ativo"]:
             return
-
-        # Teorema de Pitágoras em 3D para capturar a intensidade do balanço nos 3 eixos
-        forca_movimento = math.sqrt(e.x**2 + e.y**2 + e.z**2)
+        estado["nivel_estresse"] = max(0.0, estado["nivel_estresse"] - 0.20)
+        barra_estresse.value = estado["nivel_estresse"]
+        vibração_sistema.vibrate()
         
-        # Filtra a gravidade normal da terra (~9.8) e foca em chacos bruscos (>13)
-        if forca_movimento > 13.0:
-            nivel_estresse = max(0.0, nivel_estresse - 0.20)
-            barra_estresse.value = nivel_estresse
-            await vibração_sistema.vibrate()
-            atualizar_humor_visual()
-            await page.update_async()
+        if estado["nivel_estresse"] > 0.70:
+            imagem_cachorro.src = IMG_BRAVO
+            lbl_status.value = "🚨 COMPORTAMENTO AGRESSIVO! DIZ CORRENDO! 🤬"
+            lbl_status.color = "red"
+        else:
+            imagem_cachorro.src = IMG_FELIZ
+            lbl_status.value = "O Bubu está adorando o carinho! 😮‍💨"
+            lbl_status.color = "orange"
+        page.update()
 
-    sensor_movimento = ft.UserAccelerometer(on_data=tratar_movimento_acelerometro)
-    page.services.append(sensor_movimento) # Inicializa o acelerômetro como serviço nativo
+    area_clicavel = ft.GestureDetector(
+        content=imagem_cachorro,
+        on_tap=ao_clicar_no_pet
+    )
 
+    # Loop assíncrono para gerenciar o tempo, pontuação e início das mídias
     async def loop_tempo():
-        nonlocal nivel_estresse, jogo_ativo, pontuacao_atual, recorde
-        while jogo_ativo:
+        # Solução do Timeout: Pequena pausa assíncrona para garantir que a tela carregou por completo
+        await asyncio.sleep(0.5)
+        try:
+            musica_fundo.play() # Toca a música de forma segura
+        except Exception:
+            pass # Previne falhas se o hardware de áudio demorar mais para responder
+
+        while estado["jogo_ativo"]:
             await asyncio.sleep(0.8)
             
-            if 0.0 < nivel_estresse < 1.0:
-                nivel_estresse = min(1.0, nivel_estresse + 0.08)
-                barra_estresse.value = nivel_estresse
-                pontuacao_atual += 10
-                lbl_pontos.value = f"Pontos: {pontuacao_atual}"
+            if 0.0 < estado["nivel_estresse"] < 1.0:
+                estado["nivel_estresse"] = min(1.0, estado["nivel_estresse"] + 0.08)
+                barra_estresse.value = estado["nivel_estresse"]
+                estado["pontuacao_atual"] += 10
+                lbl_pontos.value = f"Pontos: {estado['pontuacao_atual']}"
                 
-                if nivel_estresse > 0.70:
-                    await som_latido.play()
+                if estado["nivel_estresse"] > 0.70:
+                    try:
+                        som_latido.play()
+                    except Exception:
+                        pass
+                    imagem_cachorro.src = IMG_BRAVO
+                    lbl_status.value = "🚨 ELE ESTÁ FICANDO BRAVO! DIZ CORRENDO! 🤬"
+                    lbl_status.color = "red"
+                else:
+                    imagem_cachorro.src = IMG_FELIZ
+                    lbl_status.value = "O Bubu está feliz! 🎵"
+                    lbl_status.color = "green"
                 
-                atualizar_humor_visual()
-                await page.update_async()
+                page.update()
             
-            elif nivel_estresse >= 1.0:
-                jogo_ativo = False
+            elif estado["nivel_estresse"] >= 1.0:
+                estado["jogo_ativo"] = False
                 imagem_cachorro.src = IMG_BRAVO
-                await musica_fundo.pause()
+                try:
+                    musica_fundo.pause()
+                except Exception:
+                    pass
                 
-                if pontuacao_atual > recorde:
-                    recorde = pontuacao_atual
-                    await page.shared_preferences.set("recorde_pet", recorde)
-                    lbl_status.value = f"🔥 NOVO RECORDE! Você fez {pontuacao_atual} pontos! 🎉"
+                if estado["pontuacao_atual"] > estado["recorde"]:
+                    estado["recorde"] = estado["pontuacao_atual"]
+                    page.shared_preferences.set("recorde_pet", estado["recorde"])
+                    lbl_status.value = f"🔥 NOVO RECORDE! Fez {estado['pontuacao_atual']} pontos! 🎉"
                     lbl_status.color = "green"
                 else:
-                    lbl_status.value = f"Game Over! O Bubu mordeu! Fez {pontuacao_atual} pontos. 🦮💥"
+                    lbl_status.value = f"Game Over! O Bubu mordeu! Fez {estado['pontuacao_atual']} pontos. 🦮💥"
                     lbl_status.color = "red"
                 
                 btn_reiniciar.visible = True
-                await page.update_async()
+                page.update()
 
-    async def reiniciar_jogo(e):
-        nonlocal nivel_estresse, jogo_ativo, pontuacao_atual
-        nivel_estresse = 0.4
-        pontuacao_atual = 0
-        jogo_ativo = True
+    def inicializar_sistema():
+        if not page.shared_preferences.contains_key("recorde_pet"):
+            page.shared_preferences.set("recorde_pet", 0)
         
-        barra_estresse.value = nivel_estresse
+        estado["recorde"] = page.shared_preferences.get("recorde_pet")
+        lbl_recorde.value = f"🏆 Recorde: {estado['recorde']}"
+        
+        # Desenha tudo na interface imediatamente (Evita tela branca)
+        page.add(
+            ft.Column([
+                ft.Text("Angry Bubu - Game", size=24, weight=ft.FontWeight.BOLD, color="indigo"),
+                ft.Divider(height=10, color="transparent"),
+                placar_container,
+                ft.Divider(height=10, color="transparent"),
+                area_clicavel,
+                ft.Divider(height=10, color="transparent"),
+                barra_estresse,
+                ft.Divider(height=10, color="transparent"),
+                lbl_status,
+                btn_reiniciar
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+        )
+        
+        # Dispara o controlador assíncrono em paralelo
+        page.run_task(loop_tempo)
+
+    def reiniciar_jogo(e):
+        estado["nivel_estresse"] = 0.4
+        estado["pontuacao_atual"] = 0
+        estado["jogo_ativo"] = True
+        
+        barra_estresse.value = estado["nivel_estresse"]
         imagem_cachorro.src = IMG_FELIZ
-        lbl_pontos.value = f"Pontos: {pontuacao_atual}"
-        lbl_recorde.value = f"🏆 Recorde: {recorde}"
-        lbl_status.value = "O Bubu está feliz! Ouça a música e cuide dele. 🎵"
+        lbl_pontos.value = f"Pontos: {estado['pontuacao_atual']}"
+        lbl_recorde.value = f"🏆 Recorde: {estado['recorde']}"
+        lbl_status.value = "O Bubu está feliz! Clique nele para acalmar! 🎵"
         lbl_status.color = "green"
         btn_reiniciar.visible = False
         
-        await page.update_async()
-        await musica_fundo.play()
+        page.update()
+        try:
+            musica_fundo.play()
+        except Exception:
+            pass
         page.run_task(loop_tempo)
 
     btn_reiniciar.on_click = reiniciar_jogo
-
-    # Renderiza a árvore estrutural da interface
-    await page.add_async(
-        ft.Column([
-            ft.Text("Angry Bubu - Game", size=24, weight=ft.FontWeight.BOLD, color="indigo"),
-            ft.Divider(height=10, color="transparent"),
-            placar_container,
-            ft.Divider(height=10, color="transparent"),
-            imagem_cachorro,
-            ft.Divider(height=10, color="transparent"),
-            barra_estresse,
-            ft.Divider(height=10, color="transparent"),
-            lbl_status,
-            btn_reiniciar
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
-    )
-    
-    page.run_task(loop_tempo)
+    inicializar_sistema()
 
 ft.app(target=main)
+            
