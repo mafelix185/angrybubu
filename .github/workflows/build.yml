@@ -10,12 +10,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Linux Audio Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev libgles2-mesa-dev xvfb
-
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -24,14 +19,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
-      - name: Install Flet and Dependencies
+      - name: Install Linux Audio Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libgles2-mesa-dev xvfb
+
+      - name: Install Tools and Dependencies
         run: |
           pip install --upgrade pip
           pip install "flet[cli]" flet-audio
 
-      - name: Build Android APK
+      - name: Build Android Package
         run: |
           xvfb-run flet build apk --project-name angrybubu "Angry Bubu"
 
