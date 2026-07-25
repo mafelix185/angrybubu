@@ -21,12 +21,17 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Set up Flutter Environment
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
       - name: Install Linux Audio Packages
         run: |
           sudo apt-get update
           sudo apt-get install -y libasound2-dev libgles2-mesa-dev xvfb
 
-      - name: Install Tools and Dependencies
+      - name: Install Python Tools
         run: |
           pip install --upgrade pip
           pip install "flet[cli]" flet-audio
@@ -40,3 +45,4 @@ jobs:
         with:
           name: AngryBubu-APK
           path: build/apk/app-release.apk
+          
