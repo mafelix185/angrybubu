@@ -12,11 +12,7 @@ def main(page: ft.Page):
     IMG_FELIZ = "https://unsplash.com"
     IMG_BRAVO = "https://unsplash.com"
 
-    # =========================================================================
-    # ⚙️ CONFIGURAÇÃO DE ÁUDIOS CORRIGIDA
-    # =========================================================================
-    
-    # Usamos ReleaseMode.LOOP para fazer a música repetir infinitamente de forma nativa
+    # --- CONFIGURAÇÃO DE ÁUDIOS E HARDWARE ---
     musica_fundo = fta.Audio(
         src="https://soundjay.com",
         volume=0.3,
@@ -37,10 +33,14 @@ def main(page: ft.Page):
     pontuacao_atual = 0
     jogo_ativo = True
 
-    # Inicializa o recorde local no dispositivo
-    if not page.client_storage.contains_key("recorde_pet"):
-        page.client_storage.set("recorde_pet", 0)
-    recorde = page.client_storage.get("recorde_pet")
+    # =========================================================================
+    # ⚙️ ARMAZENAMENTO ATUALIZADO (page.shared_preferences)
+    # =========================================================================
+    # Se não houver recorde salvo ainda no dispositivo, começa com 0
+    if not page.shared_preferences.contains_key("recorde_pet"):
+        page.shared_preferences.set("recorde_pet", 0)
+    
+    recorde = page.shared_preferences.get("recorde_pet")
 
     # --- MONTAGEM DA INTERFACE ---
     imagem_cachorro = ft.Image(src=IMG_FELIZ, width=250, height=250, fit=ft.ImageFit.COVER, border_radius=20)
@@ -104,9 +104,10 @@ def main(page: ft.Page):
                 imagem_cachorro.src = IMG_BRAVO
                 musica_fundo.pause()
                 
+                # Validação de Recorde usando shared_preferences
                 if pontuacao_atual > recorde:
                     recorde = pontuacao_atual
-                    page.client_storage.set("recorde_pet", recorde)
+                    page.shared_preferences.set("recorde_pet", recorde)
                     lbl_status.value = f"🔥 NOVO RECORDE! Você fez {pontuacao_atual} pontos! 🎉"
                     lbl_status.color = "green"
                 else:
