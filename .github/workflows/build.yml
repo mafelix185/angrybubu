@@ -10,6 +10,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Linux Audio Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libgles2-mesa-dev xvfb
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -23,16 +28,15 @@ jobs:
 
       - name: Install Flet and Dependencies
         run: |
-          pip install "flet[cli]"
-          pip install flet-audio
+          pip install --upgrade pip
+          pip install "flet[cli]" flet-audio
 
       - name: Build Android APK
         run: |
-          flet build apk --project-name angrybubu "Angry Bubu"
+          xvfb-run flet build apk --project-name angrybubu "Angry Bubu"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AngryBubu-APK
           path: build/apk/app-release.apk
-          
