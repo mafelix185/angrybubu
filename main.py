@@ -14,13 +14,13 @@ def main(page: ft.Page):
 
     # --- CONFIGURAÇÃO DE ÁUDIOS E HARDWARE ---
     musica_fundo = fta.Audio(
-        src="https://soundjay.com",
+        src="/barn-beat-01.mp3",
         volume=0.3,
         release_mode=fta.ReleaseMode.LOOP
     )
     
     som_latido = fta.Audio(
-        src="https://soundjay.com",
+        src="/dog-bark-01.mp3",
         volume=1.0,
         release_mode=fta.ReleaseMode.STOP
     )
@@ -52,9 +52,13 @@ def main(page: ft.Page):
     lbl_status = ft.Text(value="O Bubu está feliz! Ouça a música e cuide dele. 🎵", size=15, weight=ft.FontWeight.BOLD, color="green")
     
     # =========================================================================
-    # 🔘 CORREÇÃO DO BOTÃO (Garantindo ft.ElevatedButton de ponta a ponta)
+    # 🔘 CORREÇÃO SINTÁTICA DO BOTÃO (Padrão Moderno do Flet)
     # =========================================================================
-    btn_reiniciar = ft.ElevatedButton(text="Jogar Novamente", visible=False)
+    # Usamos o 'content' recebendo um controle de texto para máxima compatibilidade
+    btn_reiniciar = ft.ElevatedButton(
+        content=ft.Text("Jogar Novamente"), 
+        visible=False
+    )
 
     lbl_pontos = ft.Text(value=f"Pontos: {pontuacao_atual}", size=18, weight=ft.FontWeight.BOLD, color="indigo")
     lbl_recorde = ft.Text(value=f"🏆 Recorde: {recorde}", size=16, weight=ft.FontWeight.W_500, color="amber-700")
