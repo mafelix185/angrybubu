@@ -12,11 +12,15 @@ def main(page: ft.Page):
     IMG_FELIZ = "https://unsplash.com"
     IMG_BRAVO = "https://unsplash.com"
 
-    # --- CONFIGURAÇÃO DE ÁUDIOS E HARDWARE ---
+    # =========================================================================
+    # ⚙️ CONFIGURAÇÃO DE ÁUDIOS CORRIGIDA
+    # =========================================================================
+    
+    # Usamos ReleaseMode.LOOP para fazer a música repetir infinitamente de forma nativa
     musica_fundo = fta.Audio(
         src="https://soundjay.com",
         volume=0.3,
-        repeat_count=0
+        release_mode=fta.ReleaseMode.LOOP
     )
     
     som_latido = fta.Audio(
