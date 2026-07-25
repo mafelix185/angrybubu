@@ -1,0 +1,14 @@
+[project]
+name = "angrybubu"
+version = "0.1.0"
+dependencies = [
+    "flet>=0.25.0",
+    "flet-audio"
+]
+
+[tool.flet.app]
+path = "."
+
+[tool.flet.android]
+package_name = "com.mafelix.angrybubu"
+product_name = "Angry Bubu"
